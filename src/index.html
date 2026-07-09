@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>谕 · Oracle Desktop</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <!-- 顶部 Tab 栏 -->
+  <nav class="tab-bar">
+    <button class="tab active" data-tab="tarot">塔罗镜</button>
+    <button class="tab" data-tab="iching">易经卜卦</button>
+  </nav>
+
+  <!-- Tab 内容区 -->
+  <main id="app">
+    <section id="tab-tarot" class="tab-panel active"></section>
+    <section id="tab-iching" class="tab-panel"></section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
