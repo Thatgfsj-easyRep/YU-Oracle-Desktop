@@ -221,16 +221,26 @@ jobs:
       - name: Generate iOS project
         run: npx tauri ios init --ci
 
-      # 自动签名（App Store Connect API key）：上游文档要求这三个环境变量
+      # 自动签名（App Store Connect API key）：上游文档要求这三个环境变量。
+      # 注意：steps.if 的可用上下文里**没有 secrets**（官方 contexts 可用性表），
+      # 所以"密钥配了没"只能在脚本里判断，secrets 通过 env 映射传进来。
       - name: Prepare App Store Connect API key
-        if: ${{ secrets.APPLE_API_KEY != '' }}
+        env:
+          ASC_KEY_B64: ${{ secrets.APPLE_API_KEY }}
+          ASC_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          ASC_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
         run: |
           set -euo pipefail
+          if [ -z "$ASC_KEY_B64" ] || [ -z "$ASC_ISSUER" ] || [ -z "$ASC_KEY_ID" ]; then
+            echo "没配 App Store Connect API key，跳过自动签名（将使用 IOS_CERTIFICATE* 手动签名）"
+            exit 0
+          fi
           mkdir -p "$RUNNER_TEMP/auth"
-          printf '%s' "${{ secrets.APPLE_API_KEY }}" | base64 --decode > "$RUNNER_TEMP/auth/AuthKey.p8"
+          printf '%s' "$ASC_KEY_B64" | base64 --decode > "$RUNNER_TEMP/auth/AuthKey.p8"
+          chmod 600 "$RUNNER_TEMP/auth/AuthKey.p8"
           echo "APPLE_API_KEY_PATH=$RUNNER_TEMP/auth/AuthKey.p8" >> "$GITHUB_ENV"
-          echo "APPLE_API_ISSUER=${{ secrets.APPLE_API_ISSUER }}" >> "$GITHUB_ENV"
-          echo "APPLE_API_KEY=${{ secrets.APPLE_API_KEY_ID }}" >> "$GITHUB_ENV"
+          echo "APPLE_API_ISSUER=$ASC_ISSUER" >> "$GITHUB_ENV"
+          echo "APPLE_API_KEY=$ASC_KEY_ID" >> "$GITHUB_ENV"
 
       - name: Sign and export (tauri ios build)
         env:
