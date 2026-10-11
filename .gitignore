@@ -8,6 +8,8 @@ src-tauri/target/
 src-tauri/gen/
 
 # ----- 临时 / 系统 -----
+__pycache__/
+*.pyc
 *.tmp
 *.log
 .DS_Store
@@ -18,3 +20,12 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# ----- iOS（Tauri 生成物：由 `npm run tauri ios init` 重建，不入库）-----
+ios-app/
+src-tauri/gen/apple/
+**/Podfile.lock
+**/Pods/
+**/xcuserdata/
+*.xcscmblueprint
+build/

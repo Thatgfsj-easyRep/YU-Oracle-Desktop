@@ -30,12 +30,20 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
+    "targets": [
+      "nsis"
+    ],
     "icon": [
-      "icons/icon.ico"
+      "icons/icon.ico",
+      "icons/icon.png",
+      "icons/ios/AppIcon-512@2x.png"
     ],
     "category": "Lifestyle",
     "shortDescription": "塔罗镜 + 易经卜卦 桌面占卜",
-    "longDescription": "单应用双 Tab：塔罗镜（手动翻牌，三卡阵）与易经卜卦（64 卦）。占卜结果以 Markdown 复制并唤起 DeepSeek Web。"
+    "longDescription": "单应用双 Tab：塔罗镜（手动翻牌，三卡阵）与易经卜卦（64 卦）。占卜结果以 Markdown 复制并唤起 DeepSeek Web。",
+    "iOS": {
+      "developmentTeam": null,
+      "minimumSystemVersion": "14.0"
+    }
   }
 }

@@ -53,14 +53,15 @@ const TPL = `
 `;
 
 const CSS = `
-.iching-host { position:relative; width:100%; max-width:600px; min-height:560px; display:flex; align-items:center; justify-content:center; }
+.iching-host { position:relative; width:100%; max-width:600px; min-height:min(560px, 100%); display:flex; align-items:center; justify-content:center; }
 .iching-host .home[hidden],
 .iching-host .stage[hidden] { display: none !important; }
 .iching-host .home,
 .iching-host .stage { display: flex; flex-direction: column; align-items: center; width: 100%; }
 
 /* Home */
-.iching-host .home { position:relative; width:100%; height:560px; }
+/* 原来固定 560px 高：在 iPhone（可视高约 760px、去掉 tab 栏更少）会被裁掉，改成跟随容器 */
+.iching-host .home { position:relative; width:100%; height:100%; min-height:min(560px, 100%); }
 .iching-host .word-cloud { position:absolute; inset:0; overflow:hidden; }
 .iching-host .word-cloud .name {
   position:absolute; color:rgba(58,42,26,.12);
@@ -76,15 +77,16 @@ const CSS = `
   position:relative; z-index:1; width:100%; height:100%;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
 }
-.iching-host .home-center .title { color:#3a2a1a; font-size:64px; margin:0 0 4px; font-weight:600; letter-spacing:8px; }
-.iching-host .home-center .subtitle-zh { color:#3a2a1a; font-size:13px; opacity:.55; margin:0 0 24px; letter-spacing:4px; }
-.iching-host .home-center .lead { font-size:11px; opacity:.5; margin:0 0 36px; }
+.iching-host .home-center .title { color:#3a2a1a; font-size:clamp(40px,11vw,64px); margin:0 0 4px; font-weight:600; letter-spacing:clamp(4px,1.6vw,8px); }
+.iching-host .home-center .subtitle-zh { color:#3a2a1a; font-size:max(12px,3.2vw); opacity:.55; margin:0 0 24px; letter-spacing:4px; }
+.iching-host .home-center .lead { font-size:max(11px,3vw); opacity:.5; margin:0 0 36px; }
 .iching-host .actions { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
 .iching-host .actions.row { margin-top:16px; transition: opacity .25s; }
 
 /* Card */
 .iching-host .hex-card {
-  width:420px; max-width:90vw; min-height:420px;
+  width:min(420px, 92vw); min-height:min(420px, 62vh);
+  max-height:calc(100% - 8px); overflow:auto;      /* 小屏时卦辞可滚，不被裁 */
   background: linear-gradient(180deg, #f4ead5 0%, #ebdfbe 100%);
   color:#2a2520; border:1px solid #b89c6d; border-radius:6px;
   padding:28px 32px; box-shadow:0 6px 24px rgba(0,0,0,.5);
@@ -92,37 +94,37 @@ const CSS = `
   text-align:center; position:relative;
 }
 .iching-host .hex-lines { display:flex; flex-direction:column; align-items:center; gap:5px; margin:8px 0 16px; }
-.iching-host .hex-lines .line { width:200px; height:10px; opacity:0; transform:translateY(8px); transition: opacity .3s, transform .3s; }
+.iching-host .hex-lines .line { width:min(200px, 60vw); height:10px; opacity:0; transform:translateY(8px); transition: opacity .3s, transform .3s; }
 .iching-host .hex-lines .line.show { opacity:1; transform:translateY(0); }
 /* 阳爻：实线 */
-.iching-host .hex-lines .line.yang { width:200px; height:5px; background:#3a2a1a; border-radius:1px; margin:2.5px 0; }
+.iching-host .hex-lines .line.yang { width:min(200px, 60vw); height:5px; background:#3a2a1a; border-radius:1px; margin:2.5px 0; }
 /* 阴爻：虚线（中间断开）—— 用 CSS 做两段+gap */
-.iching-host .hex-lines .line.yin { position:relative; height:5px; margin:2.5px auto; width:200px; }
+.iching-host .hex-lines .line.yin { position:relative; height:5px; margin:2.5px auto; width:min(200px, 60vw); }
 .iching-host .hex-lines .line.yin::before,
 .iching-host .hex-lines .line.yin::after {
   content:""; position:absolute; top:0; height:100%; background:#3a2a1a; border-radius:1px;
 }
 .iching-host .hex-lines .line.yin::before { left:0; width:42%; }
 .iching-host .hex-lines .line.yin::after  { right:0; width:42%; }
-.iching-host .hex-name { font-size:32px; font-weight:600; letter-spacing:8px; color:#5c3a1a; opacity:0; transition: opacity .4s; }
+.iching-host .hex-name { font-size:clamp(24px,6.5vw,32px); font-weight:600; letter-spacing:clamp(4px,1.6vw,8px); color:#5c3a1a; opacity:0; transition: opacity .4s; }
 .iching-host .hex-name.show { opacity:1; }
-.iching-host .hex-pinyin { font-size:14px; color:#7a5a3a; font-style:italic; margin-top:2px; opacity:0; transition: opacity .4s; }
+.iching-host .hex-pinyin { font-size:max(13px,3.4vw); color:#7a5a3a; font-style:italic; margin-top:2px; opacity:0; transition: opacity .4s; }
 .iching-host .hex-pinyin.show { opacity:.8; }
-.iching-host .hex-en { font-size:11px; color:#8a6a4a; font-style:italic; margin-bottom:14px; opacity:0; transition: opacity .4s; }
+.iching-host .hex-en { font-size:max(11px,3vw); color:#8a6a4a; font-style:italic; margin-bottom:14px; opacity:0; transition: opacity .4s; }
 .iching-host .hex-en.show { opacity:.7; }
-.iching-host .section-label { font-family:"Courier New",monospace; font-size:10px; color:#7a5a3a; letter-spacing:2px; margin-top:14px; opacity:0; transition: opacity .4s; }
+.iching-host .section-label { font-family:"Courier New",ui-monospace,monospace; font-size:max(10px,2.7vw); color:#7a5a3a; letter-spacing:2px; margin-top:14px; opacity:0; transition: opacity .4s; }
 .iching-host .section-label.show { opacity:.7; }
-.iching-host .hex-judgment { font-size:15px; line-height:1.8; margin:8px 0; opacity:0; transition: opacity .4s; }
+.iching-host .hex-judgment { font-size:max(14px,3.6vw); line-height:1.8; margin:8px 0; opacity:0; transition: opacity .4s; }
 .iching-host .hex-judgment.show { opacity:1; }
-.iching-host .hex-image { font-size:14px; line-height:1.8; color:#5a4030; font-style:italic; opacity:0; transition: opacity .4s; }
+.iching-host .hex-image { font-size:max(13px,3.4vw); line-height:1.8; color:#5a4030; font-style:italic; opacity:0; transition: opacity .4s; }
 .iching-host .hex-image.show { opacity:1; }
 
 /* Modal */
 .iching-host .modal[hidden] { display: none !important; }
 .iching-host .modal { position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:50; }
-.iching-host .modal-box { background:#f4ead5; color:#2a2520; padding:28px 32px; border-radius:8px; max-width:420px; width:90vw; box-shadow:0 10px 40px rgba(0,0,0,.6); font-family:"Source Han Serif SC","Songti SC",serif; text-align:center; border:1px solid #b89c6d; }
+.iching-host .modal-box { background:#f4ead5; color:#2a2520; padding:clamp(18px,5vw,28px) clamp(18px,5vw,32px); border-radius:8px; max-width:420px; width:min(90vw, 420px); max-height:80vh; overflow:auto; box-shadow:0 10px 40px rgba(0,0,0,.6); font-family:"Source Han Serif SC","Songti SC",serif; text-align:center; border:1px solid #b89c6d; }
 .iching-host .modal-title { font-size:18px; font-weight:600; margin-bottom:14px; color:#5c3a1a; }
-.iching-host .modal-text { font-size:14px; line-height:1.8; margin-bottom:20px; }
+.iching-host .modal-text { font-size:max(13px,3.4vw); line-height:1.8; margin-bottom:20px; }
 .iching-host .modal-actions { display:flex; gap:12px; justify-content:center; }
 `;
 

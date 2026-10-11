@@ -12,30 +12,47 @@ const panels = {
 };
 
 // 共享：复制 Markdown + 唤起 DeepSeek
-// 优先使用 Tauri 插件（写系统剪贴板 + 打开默认浏览器），
-// 浏览器降级（开发模式或者能力拒绝时）
+//
+// iOS/WKWebView 里两条 Web API 都不可靠：
+//   - window.open() 没有 new-window 委托会被静默丢弃 → 必须走 opener 插件
+//   - navigator.clipboard 需要安全上下文 + 用户手势，自定义协议下常直接 reject
+//     → 必须走 clipboard-manager 插件
+// 桌面端（Tauri）同样走插件；纯浏览器开发模式（vite 直开）才退回 Web API。
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
+import { openUrl } from "@tauri-apps/plugin-opener";
+
+const inTauri = () => typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+const DEEPSEEK_URL = "https://chat.deepseek.com";
+
 async function copyMarkdown(md) {
-  try {
-    const { invoke } = await import("@tauri-apps/api/core");
-    await invoke("plugin:clipboard-manager|write_text", { text: md, label: null });
-    showToast("已复制 Markdown");
-    return;
-  } catch (e) { /* fall through to web fallback */ }
+  if (inTauri()) {
+    try {
+      await writeText(md);
+      showToast("已复制 Markdown");
+      return;
+    } catch (e) {
+      console.warn("clipboard-manager 插件写入失败，退回 Web API：", e);
+    }
+  }
   try {
     await navigator.clipboard.writeText(md);
     showToast("已复制 Markdown");
   } catch (e) {
+    console.warn("复制失败：", e);
     showToast("复制失败");
   }
 }
 
 async function openDeepSeek() {
-  try {
-    const { invoke } = await import("@tauri-apps/api/core");
-    await invoke("plugin:opener|open_url", { url: "https://chat.deepseek.com" });
-    return;
-  } catch (e) { /* fall through */ }
-  window.open("https://chat.deepseek.com", "_blank", "noopener");
+  if (inTauri()) {
+    try {
+      await openUrl(DEEPSEEK_URL);
+      return;
+    } catch (e) {
+      console.warn("opener 插件打开失败，退回 window.open：", e);
+    }
+  }
+  window.open(DEEPSEEK_URL, "_blank", "noopener");
 }
 
 function showToast(msg) {

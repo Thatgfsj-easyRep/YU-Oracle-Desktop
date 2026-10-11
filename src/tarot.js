@@ -48,11 +48,16 @@ const TPL = `
 `;
 
 const CSS = `
-.oracle-host { display:flex; flex-direction:column; align-items:center; gap:14px; width:100%; max-width:560px; }
-.title { color:#D4AF37; font-size:36px; margin:8px 0 4px; font-weight:600; letter-spacing:8px; }
+.oracle-host { display:flex; flex-direction:column; align-items:center; gap:14px; width:100%; max-width:560px;
+  /* iOS 竖屏（390pt）也能装下三张牌：所有尺寸由这两个变量派生 */
+  --cw1: min(200px, 52vw);   /* 单卡模式卡宽 */
+  --cw3: min(200px, 27vw);   /* 三卡阵卡宽：3×27vw + 2×2.5vw = 86vw < 96vw */
+  --gap3: min(32px, 2.5vw);
+}
+.title { color:#D4AF37; font-size:clamp(26px,7vw,36px); margin:8px 0 4px; font-weight:600; letter-spacing:clamp(3px,1.6vw,8px); }
 .subtitle-en { color:#F5E7A0; font-size:13px; font-style:italic; letter-spacing:2px; opacity:.75; margin:0; }
-.subtitle-zh { color:#F5E7C8; font-size:11px; opacity:.55; margin:6px 0 28px; letter-spacing:4px; }
-.lead { font-size:12px; opacity:.55; margin-bottom:32px; }
+.subtitle-zh { color:#F5E7C8; font-size:max(11px,3vw); opacity:.55; margin:6px 0 28px; letter-spacing:4px; }
+.lead { font-size:max(12px,3.4vw); opacity:.55; margin-bottom:32px; }
 .home { display:flex; flex-direction:column; align-items:center; }
 .home[hidden], .stage[hidden] { display: none !important; }
 .actions { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
@@ -60,20 +65,22 @@ const CSS = `
 
 /* 3D 翻牌 */
 .stage { perspective:1200px; display:flex; flex-direction:column; align-items:center; }
-.hint { font-size:12px; opacity:.55; font-style:italic; letter-spacing:4px; height:18px; }
+.hint { font-size:max(12px,3.4vw); opacity:.55; font-style:italic; letter-spacing:4px; height:18px; }
 .hint.hide { opacity:0; transition:opacity .4s; }
 
-/* === 单卡 200×280（比原版更大） === */
+/* === 卡面尺寸：宽由 --cw 决定，高按塔罗牌 1:1.4 比例派生 === */
 .card-w160 {
-  width:200px; height:280px; position:relative;
+  width:var(--cw1); height:calc(var(--cw1) * 1.4); position:relative;
   transform-style:preserve-3d; cursor:pointer;
+  -webkit-user-select:none; user-select:none;   /* 翻牌时不要选中文字 */
 }
 .card-w160 { transition: transform .8s ease-in-out; }
 .card-w160.flipped { transform:rotateY(180deg); }
 
 .card-w80 {
-  width:200px; height:280px; position:relative;
+  width:var(--cw3); height:calc(var(--cw3) * 1.4); position:relative;
   transform-style:preserve-3d; cursor:pointer;
+  -webkit-user-select:none; user-select:none;
 }
 .card-w80 { transition: transform .8s ease-in-out; }
 .card-w80.flipped { transform:rotateY(180deg); }
@@ -87,7 +94,7 @@ const CSS = `
   transform:rotateY(0deg); /* 默认可见（背面朝上） */
   background:linear-gradient(135deg,#3C126E 0%, #1a0540 60%, #040214 100%);
   display:flex; align-items:center; justify-content:center;
-  font-size:64px; color:#D4AF37;
+  font-size:calc(var(--cw1) * .32); color:#D4AF37;   /* ✦ 随牌缩放 */
   text-shadow:0 0 18px rgba(212,175,55,.5);
 }
 .face.back::before {
@@ -98,24 +105,24 @@ const CSS = `
 .face.front img { width:100%; height:100%; object-fit:cover; display:block; }
 
 .card-w80 .face { border-radius:6px; box-shadow:0 0 14px rgba(212,175,55,.4); }
-.card-w80 .face.back { font-size:32px; }
+.card-w80 .face.back { font-size:calc(var(--cw3) * .24); }
 .card-w80 .face.back::before { inset:4px; }
 
-.spread { display:flex; gap:32px; justify-content:center; align-items:flex-end; }
+.spread { display:flex; gap:var(--gap3); justify-content:center; align-items:flex-end; }
 .lbl { text-align:center; color:#D4AF37; font-size:13px; margin-bottom:6px; letter-spacing:2px; }
 .slot { display:flex; flex-direction:column; align-items:center; gap:8px; }
 .card-info { text-align:center; opacity:0; transition:opacity .5s; }
 .card-info.show { opacity:1; }
-.card-info .card-name { color:#D4AF37; font-size:16px; font-weight:600; }
-.card-info .card-en { color:#F5E7A0; font-size:11px; font-style:italic; opacity:.85; }
-.card-info .card-ori { color:#F5E7C8; font-size:12px; margin-top:2px; }
+.card-info .card-name { color:#D4AF37; font-size:clamp(11px,3vw,16px); font-weight:600; }
+.card-info .card-en { color:#F5E7A0; font-size:max(10px,2.7vw); font-style:italic; opacity:.85; }
+.card-info .card-ori { color:#F5E7C8; font-size:max(10px,2.8vw); margin-top:2px; }
 .card-info .card-ori.rev { color:#c97bd8; }
 
 .info { text-align:center; opacity:0; transition: opacity .6s .3s; min-height:74px; margin-top:14px; }
 .info.show { opacity:1; }
-.name { color:#D4AF37; font-size:22px; margin:4px 0; font-weight:600; }
+.name { color:#D4AF37; font-size:clamp(18px,5vw,22px); margin:4px 0; font-weight:600; }
 .name-en { color:#F5E7A0; font-size:13px; font-style:italic; opacity:.85; }
-.orientation { color:#F5E7C8; margin-top:4px; font-size:13px; }
+.orientation { color:#F5E7C8; margin-top:4px; font-size:max(12px,3.2vw); }
 .orientation.rev { color:#c97bd8; }
 `;
 

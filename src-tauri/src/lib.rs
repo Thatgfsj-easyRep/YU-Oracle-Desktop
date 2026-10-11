@@ -11,8 +11,11 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .setup(|app| {
-            #[cfg(debug_assertions)]
+            // open_devtools 只有桌面端 WebView 提供；移动端（iOS/Android）连编译都不会过，
+            // 所以除了 debug_assertions 还要限定 desktop。
+            #[cfg(all(debug_assertions, desktop))]
             {
+                use tauri::Manager;
                 if let Some(window) = app.get_webview_window("main") {
                     window.open_devtools();
                 }
