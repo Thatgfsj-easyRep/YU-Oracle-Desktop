@@ -149,9 +149,17 @@ jobs:
             echo "没找到 .app 产物"; find . -maxdepth 4 -name '*.xcarchive' -o -maxdepth 4 -type d -name build | head; exit 1
           fi
           echo "产物：$app"; du -sh "$app"
+          ls -la "$app"
           bin="$app/$(/usr/bin/plutil -extract CFBundleExecutable raw "$app/Info.plist")"
           echo "可执行文件：$bin"
           /usr/bin/lipo -archs "$bin"          # 必须是 arm64，证明这是真机切片而非模拟器
+          # Tauri 把前端与牌图嵌进 Mach-O（asset map），所以 .app 里没有 dist/ 目录是正常的；
+          # 这里抽查两张牌的路径确认真的打进去了。
+          n=$(strings -a "$bin" | grep -c 'tarot/cards/' || true)
+          echo "asset map 里的牌图路径：$n 条（应为 78）"
+          if [ "$n" -lt 78 ]; then
+            echo "::warning::牌图路径少于 78 条，前端资源可能没打全"
+          fi
           mkdir -p dist Payload
           cp -R "$app" Payload/
           zip -qr dist/Oracle-unsigned.ipa Payload
@@ -163,7 +171,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ios-unsigned-app
-          path: dist/
+          # 只上传两个归档；dist/ 里还有 Vite 的前端产物，没必要塞进 artifact
+          path: |
+            dist/Oracle-unsigned.ipa
+            dist/Oracle-unsigned.app.zip
           retention-days: 7
           if-no-files-found: error
 
