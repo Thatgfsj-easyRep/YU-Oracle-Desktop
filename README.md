@@ -110,7 +110,7 @@ npx tauri build
 # 需要 macOS + Xcode（Tauri 的 iOS 命令只能在 macOS 上跑）
 npm ci
 npm run build
-npx tauri ios init --ci        # 生成 ios-app/ 与 src-tauri/gen/apple/（都在 .gitignore 里）
+npx tauri ios init --ci        # 用 xcodegen 生成 src-tauri/gen/apple/（含 .xcodeproj，已在 .gitignore）
 npx tauri ios dev              # 连着手机/模拟器热重载调试
 npx tauri ios build --export-method release-testing   # 需要签名，见下
 ```

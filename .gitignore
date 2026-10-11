@@ -22,6 +22,7 @@ Thumbs.db
 *.swo
 
 # ----- iOS（Tauri 生成物：由 `npm run tauri ios init` 重建，不入库）-----
+# Tauri 2 由 xcodegen 生成 iOS 工程（工程名含 productName，路径在 gen/apple）
 ios-app/
 src-tauri/gen/apple/
 **/Podfile.lock

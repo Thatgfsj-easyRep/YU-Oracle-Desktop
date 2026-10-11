@@ -93,7 +93,7 @@ git clone https://github.com/Thatgfsj-easyRep/YU-Oracle-Desktop.git
 cd YU-Oracle-Desktop
 npm ci && npm run build
 npx tauri ios init --ci
-open ios-app/*.xcodeproj        # Xcode 里 Signing & Capabilities → Team 选自己的 Apple ID
+open src-tauri/gen/apple/*.xcodeproj   # Xcode 里 Signing & Capabilities → Team 选自己的 Apple ID
 # 然后 xcodebuild 归档或直接 ⌘R 装到连着的数据线手机
 ```
 
@@ -104,7 +104,7 @@ open ios-app/*.xcodeproj        # Xcode 里 Signing & Capabilities → Team 选�
 - `tauri.conf.json` 里的 `identifier`（现为 `com.thatgfsj.oracle-desktop`）必须与
   App ID 注册的 Bundle ID 完全一致；改动它会让已有的 profile 失效。
 - 移动端命令只能在 macOS 上跑（Tauri CLI 原文："All iOS commands are only available on macOS hosts."），
-  所以 `ios-app/` 与 `src-tauri/gen/apple/` 都列在 `.gitignore` 里，由 CI 每次重新生成。
+  所以 `src-tauri/gen/apple/`（xcodegen 生成的 iOS 工程）列在 `.gitignore` 里，由 CI 每次重新生成。
 - iOS 图标必须不透明且铺满方形（App Store 会以 ITMS-90704 拒绝含透明像素的图标）。
   现仓库里的 `icons/ios/` 已按此生成；若要更清晰的大图，用矢量脚本重出 1024 源图：
 

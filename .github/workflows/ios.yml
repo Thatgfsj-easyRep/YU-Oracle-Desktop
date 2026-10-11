@@ -124,16 +124,34 @@ jobs:
       - name: Generate iOS project (tauri ios init)
         run: npx tauri ios init --ci
 
+      # Tauri 2 的 iOS 工程由 xcodegen 生成在 src-tauri/gen/apple/（不是 Tauri 1 的 ios-app/），
+      # 且工程名跟随 productName（这里是中文 + 空格 + ·），所以不猜路径，递归找。
       - name: Locate generated Xcode project and scheme
         id: proj
         run: |
           set -euo pipefail
-          proj=$(ls -d ios-app/*.xcodeproj | head -1)
+          proj=$(find . -name '*.xcodeproj' \
+                   -not -path './node_modules/*' -not -path '*/Pods/*' \
+                   -not -path '*/DerivedData/*' -not -path './src-tauri/target/*' \
+                   | head -1)
+          if [ -z "$proj" ]; then
+            echo "没找到 .xcodeproj。gen/apple 目录内容："
+            ls -la src-tauri/gen/apple 2>/dev/null || echo "  （src-tauri/gen/apple 不存在）"
+            exit 1
+          fi
           echo "project=$proj" >> "$GITHUB_OUTPUT"
           xcodebuild -list -project "$proj"
-          scheme=$(xcodebuild -list -json -project "$proj" | python3 -c 'import json,sys;print(json.load(sys.stdin)["project"]["schemes"][0])')
+          scheme=$(xcodebuild -list -json -project "$proj" | python3 -c '
+          import json, sys
+          d = json.load(sys.stdin)["project"]
+          schemes = d.get("schemes") or []
+          if schemes:
+              print(schemes[0])
+          else:
+              targets = d.get("target") or []
+              print(targets[0]["name"] if targets else d["name"])')
           echo "scheme=$scheme" >> "$GITHUB_OUTPUT"
-          echo "target name = $scheme | project = $proj"
+          echo "scheme = $scheme | project = $proj"
 
       - name: Build for device (unsigned)
         env:
