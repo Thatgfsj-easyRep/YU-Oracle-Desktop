@@ -1,13 +1,17 @@
-name: PROBE-2
+name: PROBE-4
 on:
   push:
     paths:
-      - ".github/workflows/ios-probe-2.yml"
+      - ".github/workflows/ios-probe-4.yml"
 permissions:
   contents: read
 jobs:
+  _stub:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo stub
   ios-unsigned:
-    needs: static
+    needs: _stub
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
