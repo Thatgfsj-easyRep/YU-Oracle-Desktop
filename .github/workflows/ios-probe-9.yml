@@ -1,0 +1,33 @@
+name: PROBE-9
+on:
+  push:
+    paths:
+      - ".github/workflows/ios-probe-9.yml"
+permissions:
+  contents: read
+jobs:
+  _stub:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo stub
+  ios-signed:
+    if: ${{ vars.ENABLE_SIGNED_BUILD == 'true' }}
+    needs: _stub
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Sign and export (tauri ios build)
+        env:
+          # config schema 里写明：APPLE_DEVELOPMENT_TEAM 环境变量会覆盖
+          # bundle.iOS.developmentTeam，所以 Team ID 不用提交进仓库，也不用 --config 转义 JSON。
+          APPLE_DEVELOPMENT_TEAM: ${{ vars.APPLE_DEVELOPMENT_TEAM }}
+          IOS_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_MOBILE_PROVISION: ${{ secrets.IOS_MOBILE_PROVISION }}
+          EXPORT_METHOD: ${{ vars.IOS_EXPORT_METHOD || 'app-store-connect' }}
+        run: |
+          set -euo pipefail
+          npx tauri ios build --ci --target aarch64 \
+            --export-method "$EXPORT_METHOD" \
+            --build-number "$GITHUB_RUN_NUMBER"
+
