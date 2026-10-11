@@ -1,6 +1,7 @@
 # iOS 签名与安装
 
-CI 默认只产出**未签名**的 `.app` / `.ipa`（见 `.github/workflows/ios.yml` 的 `ios-unsigned` 作业）。
+CI 默认只产出**未签名**的 `.app` / `.ipa`（`.github/workflows/ios.yml` 的 `ios-unsigned` 作业，
+命令是 `npx tauri ios build --ci --target aarch64 --no-sign`）。
 未签名包能证明"这个工程确实能在 arm64 真机架构上编译打包"，但**装不进任何一台 iPhone**——
 iOS 强制校验签名。要真正装到手机上，从下面三条路里选一条。
 

@@ -126,66 +126,38 @@ jobs:
 
       # Tauri 2 的 iOS 工程由 xcodegen 生成在 src-tauri/gen/apple/（不是 Tauri 1 的 ios-app/），
       # 且工程名跟随 productName（这里是中文 + 空格 + ·），所以不猜路径，递归找。
-      - name: Locate generated Xcode project and scheme
-        id: proj
+      # Tauri 2.11 的 "Build Rust Code" 脚本阶段会经 WebSocket 回连 CLI 的
+      # options server（crates/tauri-cli/src/mobile/mod.rs 的 read_options），
+      # 所以**不能**绕过 `tauri ios build` 直接调 xcodebuild——脚本会 panic
+      # "failed to read missing addr file ...-server-addr"。
+      # 正解是用 CLI 自带的 --no-sign（文档页没列，但 clap 里有：
+      # "Skip code signing when bundling the app"），archive 阶段会 skip_codesign。
+      - name: Build device .app without signing (tauri ios build --no-sign)
         run: |
           set -euo pipefail
-          proj=$(find . -name '*.xcodeproj' \
-                   -not -path './node_modules/*' -not -path '*/Pods/*' \
-                   -not -path '*/DerivedData/*' -not -path './src-tauri/target/*' \
-                   | head -1)
-          if [ -z "$proj" ]; then
-            echo "没找到 .xcodeproj。gen/apple 目录内容："
-            ls -la src-tauri/gen/apple 2>/dev/null || echo "  （src-tauri/gen/apple 不存在）"
-            exit 1
-          fi
-          echo "project=$proj" >> "$GITHUB_OUTPUT"
-          xcodebuild -list -project "$proj"
-          scheme=$(xcodebuild -list -json -project "$proj" | python3 -c '
-          import json, sys
-          d = json.load(sys.stdin)["project"]
-          schemes = d.get("schemes") or []
-          if schemes:
-              print(schemes[0])
-          else:
-              targets = d.get("target") or []
-              print(targets[0]["name"] if targets else d["name"])')
-          echo "scheme=$scheme" >> "$GITHUB_OUTPUT"
-          echo "scheme = $scheme | project = $proj"
-
-      - name: Build for device (unsigned)
-        env:
-          PROJECT: ${{ steps.proj.outputs.project }}
-          SCHEME: ${{ steps.proj.outputs.scheme }}
-          CONFIG: ${{ github.event.inputs.configuration || 'release' }}
-        run: |
-          set -euo pipefail
-          xcodebuild build \
-            -project "$PROJECT" \
-            -scheme "$SCHEME" \
-            -configuration "$CONFIG" \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath "$RUNNER_TEMP/DD" \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY= \
-            EXPANDED_CODE_SIGN_IDENTITY= \
-            2>&1 | tee "$RUNNER_TEMP/xcodebuild.log" | tail -60
+          npx tauri ios build --ci --target aarch64 --no-sign \
+            --build-number "$GITHUB_RUN_NUMBER" \
+            2>&1 | tee "$RUNNER_TEMP/tauri-ios-build.log" | tail -80
 
       - name: Package unsigned .app into .ipa
         run: |
           set -euo pipefail
-          app=$(find "$RUNNER_TEMP/DD/Build/Products" -maxdepth 2 -name '*.app' -print -quit)
-          echo "找到 app 产物：$app"
-          test -d "$app"
-          du -sh "$app"
+          app=$(find . -type d -name '*.app' \
+                  -not -path './node_modules/*' -not -path '*/IntermediateBuildFilesPath/*' \
+                  | head -1)
+          if [ -z "$app" ]; then
+            echo "没找到 .app 产物"; find . -maxdepth 4 -name '*.xcarchive' -o -maxdepth 4 -type d -name build | head; exit 1
+          fi
+          echo "产物：$app"; du -sh "$app"
+          bin="$app/$(/usr/bin/plutil -extract CFBundleExecutable raw "$app/Info.plist")"
+          echo "可执行文件：$bin"
+          /usr/bin/lipo -archs "$bin"          # 必须是 arm64，证明这是真机切片而非模拟器
           mkdir -p dist Payload
           cp -R "$app" Payload/
-          zip -qr "dist/Oracle-unsigned.ipa" Payload
+          zip -qr dist/Oracle-unsigned.ipa Payload
           zip -qr dist/Oracle-unsigned.app.zip Payload
-          ls -la dist
           rm -rf Payload
+          ls -la dist
 
       - name: Upload unsigned artifacts
         uses: actions/upload-artifact@v4
@@ -199,8 +171,8 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: ios-xcodebuild-log
-          path: ${{ runner.temp }}/xcodebuild.log
+          name: ios-tauri-build-log
+          path: ${{ runner.temp }}/tauri-ios-build.log
           if-no-files-found: ignore
 
   # ── 可选：真正签名的构建。默认关闭，因为没有 Apple 开发者账号时必失败 ──

@@ -116,8 +116,15 @@ npx tauri ios build --export-method release-testing   # 需要签名，见下
 ```
 
 CI（本仓库 Actions）默认跑 **未签名** 构建：`static` 作业先把前端与配置过一遍，
-`ios-unsigned` 作业在 `macos-15` 上用 `xcodebuild ... CODE_SIGNING_ALLOWED=NO` 真机架构编出 `.app`，
-再打包成 `.ipa` 上传 artifact。未签名包**装不进手机**，它只证明工程能编出来。
+`ios-unsigned` 作业在 `macos-15` 上执行 `npx tauri ios build --target aarch64 --no-sign`，
+把产出的 `.app` 用 `lipo -archs` 验明是 arm64 真机切片，再塞进 `Payload/` 打成 `.ipa` 上传 artifact。
+未签名包**装不进手机**，它只证明工程能编出来。
+
+> 别绕过 `tauri ios build` 直接调 `xcodebuild`：Tauri 2.11 生成的工程里
+> "Build Rust Code" 脚本阶段会经 WebSocket 回连 CLI 的 options server，
+> 单独跑 xcodebuild 会 panic `failed to read missing addr file ...-server-addr`。
+> `--no-sign` 这个 flag 在 CLI 文档页上没写，但代码里有（clap：
+> "Skip code signing when bundling the app"）。
 仓库是 public，GitHub 托管 macOS runner 对 public 仓库不计费
 （GitHub 定价页原文："Minutes are free for public repositories."）。
 
